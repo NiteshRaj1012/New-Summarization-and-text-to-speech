@@ -14,3 +14,4 @@ textblob==0.17.1
 newspaper3k==0.2.8
 plotly==5.18.0
 lxml[html_clean]
+nest_asyncio
