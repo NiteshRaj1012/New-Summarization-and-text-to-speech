@@ -1,4 +1,40 @@
 import streamlit as st
+from fastapi import FastAPI
+import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
+import threading
+import nest_asyncio
+import utils  # Your utility functions
+
+# Apply nest_asyncio to allow running asyncio code in Streamlit
+nest_asyncio.apply()
+
+# Create FastAPI app
+api = FastAPI()
+api.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Define API endpoints
+@api.post("/api/news")
+async def analyze_company_news(company_name: str):
+    result = utils.process_company_news(company_name)
+    return result
+
+# Run FastAPI in a separate thread
+def run_api():
+    config = uvicorn.Config(app=api, host="127.0.0.1", port=8000, log_level="info")
+    server = uvicorn.Server(config)
+    server.run()
+
+# Start API in a thread
+threading.Thread(target=run_api, daemon=True).start()
+
+import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
