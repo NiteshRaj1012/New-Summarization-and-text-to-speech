@@ -11,6 +11,15 @@ A web-based application that extracts key details from multiple news articles re
 - Interactive web interface
 - RESTful API endpoints
 
+## Project Overview
+
+This application allows users to:
+1. Enter a company name
+2. View news articles about that company
+3. See sentiment analysis of each article (positive, negative, or neutral)
+4. View comparative analysis with visualizations
+5. Listen to a Hindi audio summary of the analysis
+
 ## Setup Instructions
 
 1. Clone the repository:
@@ -34,10 +43,15 @@ pip install -r requirements.txt
 ```python
 import nltk
 nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
+nltk.download('stopwords')
 ```
 
-5. Run the application:
+5. Start the backend API server:
+```bash
+python api.py
+```
+
+6. In a new terminal window, start the Streamlit frontend:
 ```bash
 streamlit run app.py
 ```
@@ -52,32 +66,72 @@ streamlit run app.py
 
 ## API Endpoints
 
-- `POST /api/news`: Fetch news articles for a company
-- `POST /api/sentiment`: Analyze sentiment of articles
-- `POST /api/tts`: Generate Hindi TTS audio
+- `POST /api/news`: Fetch news articles for a company and analyze them
+- `GET /api/health`: Health check endpoint
 
-## Usage
+## Implementation Details
 
-1. Launch the application using Streamlit
-2. Enter a company name in the input field
-3. Click "Analyze" to fetch and process news articles
-4. View the sentiment analysis results and comparative analysis
-5. Play the Hindi TTS audio summary
+### News Extraction
 
-## Technologies Used
+The application uses one of the following approaches to extract news:
+- Web scraping using BeautifulSoup
+- NewsAPI integration (if configured)
+- Fallback test data for demonstration purposes
 
-- Python 3.8+
-- Streamlit for web interface
-- BeautifulSoup4 for web scraping
-- Transformers for sentiment analysis
-- gTTS for Hindi text-to-speech
-- FastAPI for backend API
-- Newspaper3k for article extraction
+### Sentiment Analysis
 
-## Contributing
+Sentiment analysis is performed using the Hugging Face Transformers library, which categorizes articles as:
+- POSITIVE
+- NEGATIVE
+- NEUTRAL
 
-Feel free to submit issues and enhancement requests!
+### Comparative Analysis
+
+The application generates insights across all articles:
+- Sentiment distribution
+- Top keywords
+- Average sentiment score
+
+### Hindi Text-to-Speech
+
+The summary is converted to Hindi speech using Google's gTTS (Google Text-to-Speech) library.
+
+## Known Issues and Workarounds
+
+- **Web Scraping Limitations**: Google News and other news sites may block scraping. The application includes fallback mechanisms to ensure functionality.
+- **Sentiment Model Variations**: Different sentiment models might use different label formats. The application maps these to standard positive/negative/neutral categories.
+- **Performance Considerations**: Fetching and processing multiple articles can take time. The application is limited to processing 10 articles maximum.
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. **API Connection Error**: Ensure the FastAPI backend is running before starting the Streamlit app.
+
+2. **No Articles Found**: Try different company names or check your internet connection.
+
+3. **Missing Visualizations**: This could indicate no articles were processed successfully. Check the console logs for details.
+
+4. **Text-to-Speech Not Working**: Ensure you have an active internet connection as gTTS requires internet access.
+
+## Dependencies
+
+- streamlit: Web interface
+- beautifulsoup4, requests, newspaper3k: Web scraping
+- transformers, textblob, nltk: Text analysis
+- pandas, numpy: Data processing
+- fastapi, uvicorn: API backend
+- gTTS: Text-to-speech
+- plotly: Visualizations
+
+## Future Improvements
+
+- Add more news sources
+- Implement better keyword extraction
+- Add language selection for both text and speech
+- Implement caching to improve performance
+- Add user authentication and history
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
