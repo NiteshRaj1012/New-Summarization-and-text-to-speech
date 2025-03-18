@@ -10,6 +10,7 @@ from typing import List, Dict, Any
 import os
 import tempfile
 import json
+import random
 
 class NewsExtractor:
     def __init__(self):
