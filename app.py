@@ -1,33 +1,51 @@
-import streamlit as st
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Dict, Any, List
 import uvicorn
-from fastapi.middleware.cors import CORSMiddleware
+from utils import process_company_news
+import os
 import threading
-import nest_asyncio
-import utils  # Your utility functions
 
-# Apply nest_asyncio to allow running asyncio code in Streamlit
-nest_asyncio.apply()
+app = FastAPI(title="News Analysis API")
 
-# Create FastAPI app
-api = FastAPI()
-api.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class CompanyRequest(BaseModel):
+    company_name: str
 
-# Define API endpoints
-@api.post("/api/news")
-async def analyze_company_news(company_name: str):
-    result = utils.process_company_news(company_name)
-    return result
+class Article(BaseModel):
+    title: str
+    summary: str
+    url: str
+    text: str
+    keywords: List[str]
+    publish_date: str
+    sentiment: str
+    sentiment_score: float
 
-# Run FastAPI in a separate thread
+class AnalysisResponse(BaseModel):
+    articles: List[Article]
+    comparative_analysis: Dict[str, Any]
+    audio_path: str
+
+@app.post("/api/news", response_model=AnalysisResponse)
+async def analyze_company_news(request: CompanyRequest):
+    """
+    Analyze news articles for a given company.
+    """
+    try:
+        result = process_company_news(request.company_name)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/health")
+async def health_check():
+    """
+    Health check endpoint
+    """
+    return {"status": "healthy"}
+
 def run_api():
-    config = uvicorn.Config(app=api, host="127.0.0.1", port=8000, log_level="info")
+    config = uvicorn.Config(app=app, host="127.0.0.1", port=8080, log_level="info")
     server = uvicorn.Server(config)
     server.run()
 
@@ -35,20 +53,23 @@ def run_api():
 threading.Thread(target=run_api, daemon=True).start()
 
 import streamlit as st
-import requests
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from typing import Dict, Any, List
-import json
-import os
+from utils import NewsExtractor, SentimentAnalyzer, TextToSpeech, ComparativeAnalyzer
 
-# Configure the page
+# This must be the first Streamlit command
 st.set_page_config(
     page_title="News Analysis Dashboard",
     page_icon="📰",
     layout="wide"
 )
+
+# Import other modules AFTER setting page config
+
+import streamlit as st
+import requests
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import json
 
 # Constants
 API_URL = "http://localhost:8000"
@@ -139,6 +160,44 @@ def display_comparative_analysis(analysis: Dict[str, Any]):
             f"{analysis.get('average_sentiment', 0):.2f}"
         )
 
+# Process company news directly in Streamlit
+@st.cache_data
+def process_company_news(company_name):
+    news_extractor = NewsExtractor()
+    sentiment_analyzer = SentimentAnalyzer()
+    tts_generator = TextToSpeech()
+    comparative_analyzer = ComparativeAnalyzer()
+    
+    # Fetch news articles
+    articles = news_extractor.fetch_news(company_name)
+    
+    # Analyze sentiment for each article
+    for article in articles:
+        sentiment_result = sentiment_analyzer.analyze_sentiment(article['text'])
+        article['sentiment'] = sentiment_result['label']
+        article['sentiment_score'] = sentiment_result['score']
+    
+    # Generate comparative analysis
+    comparative_analysis = comparative_analyzer.analyze_articles(articles)
+    
+    # Get sentiment counts from comparative analysis
+    sentiment_counts = comparative_analysis.get('sentiment_distribution', {})
+    
+    # Create the Hindi summary with proper error handling
+    summary_text = f"{company_name} के बारे में {len(articles)} समाचार लेखों का विश्लेषण। "
+    summary_text += f"कुल लेखों में से {sentiment_counts.get('POSITIVE', 0)} सकारात्मक, "
+    summary_text += f"{sentiment_counts.get('NEGATIVE', 0)} नकारात्मक, और "
+    summary_text += f"{sentiment_counts.get('NEUTRAL', 0)} तटस्थ हैं।"
+    
+    # Generate TTS audio
+    audio_path = tts_generator.generate_hindi_tts(summary_text)
+    
+    return {
+        'articles': articles,
+        'comparative_analysis': comparative_analysis,
+        'audio_path': audio_path
+    }
+
 def main():
     st.title("📰 News Analysis Dashboard")
     st.write("Analyze news articles and generate insights for any company")
@@ -148,7 +207,8 @@ def main():
     
     if st.button("Analyze"):
         with st.spinner("Analyzing news articles..."):
-            result = fetch_analysis(company_name)
+            # Process directly instead of using API
+            result = process_company_news(company_name)
             
             if result:
                 # Display articles
