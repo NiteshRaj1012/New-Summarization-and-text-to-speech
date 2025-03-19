@@ -70,11 +70,19 @@ streamlit run app.py
 
 ## Project Structure
 
-- `app.py`: Main Streamlit application interface
-- `api.py`: FastAPI backend endpoints
-- `utils.py`: Utility functions for news extraction, sentiment analysis, and TTS
-- `requirements.txt`: Project dependencies
-- `README.md`: Project documentation
+Main Application Files
+app.py: The main Streamlit application file. This file integrates all functionalities, including news extraction, sentiment analysis, and text-to-speech conversion, into a single Streamlit app. It handles user input, processes data, and displays results.
+utils.py: Contains utility functions and classes for:
+News Extraction: Fetches news articles using web scraping or API calls.
+Sentiment Analysis: Analyzes the sentiment of news articles using a pre-trained model.
+Text-to-Speech: Converts text summaries into Hindi audio using gTTS.
+Comparative Analysis: Provides insights across multiple articles, such as sentiment distribution and top keywords.
+
+Additional Files
+requirements.txt: Lists all the Python dependencies required to run the application. This includes libraries for web scraping, sentiment analysis, data processing, and the web interface.
+README.md: This file. It provides an overview of the project, setup instructions, and details about each file.
+Dockerfile: A configuration file for Docker, allowing the application to be containerized. It specifies the base image and dependencies needed to run the app in a Docker container.
+.gitignore: Specifies files and directories that should be ignored by Git. This typically includes environment files, compiled code, and other temporary files.
 
 ## API Endpoints
 
